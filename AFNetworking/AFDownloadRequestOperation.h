@@ -44,6 +44,15 @@
 - (void)setDestination:(NSString *)path allowOverwrite:(BOOL)allowOverwrite;
 
 
+/**
+ Returns the resolved destination.
+ 
+ Note: This might return only the directory if the set destination is a path, and the request hasn't been started yet,
+       thus we don't have any metadata about the suggested filename.
+ */
+- (NSString *)destinationPath;
+
+
 /** 
  Deletes the temporary file if operation fails/is cancelled. Defaults to `NO`.
  */
