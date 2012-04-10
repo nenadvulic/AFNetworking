@@ -28,6 +28,8 @@
 @property (readwrite, nonatomic, retain) NSError *downloadError;
 @property (readwrite, nonatomic, copy) NSString *destination;
 @property (readwrite, nonatomic, assign) BOOL allowOverwrite;
+@property (assign, readonly) long long totalContentLength;
+@property (assign, readonly) long long offsetContentLength;
 @end
 
 static unsigned long long AFFileSizeForPath(NSString *path) {
@@ -49,7 +51,7 @@ static unsigned long long AFFileSizeForPath(NSString *path) {
 @synthesize destination = _destination;
 @synthesize allowOverwrite = _allowOverwrite;
 @synthesize deletesFileUponFailure = _deletesFileUponFailure;
-@dynamic request;
+@dynamic request, totalContentLength, offsetContentLength;
 
 - (id)initWithRequest:(NSURLRequest *)urlRequest {
     if ((self = [super initWithRequest:urlRequest])) {
@@ -93,7 +95,7 @@ static unsigned long long AFFileSizeForPath(NSString *path) {
         isDirectory = NO;
     }        
     // if targetPath is a directory, use the file name we got from the urlRequest.
-    if (isDirectory) {
+    if (isDirectory && self.response.suggestedFilename) {
         destinationPath = [NSString pathWithComponents:[NSArray arrayWithObjects:_destination, self.response.suggestedFilename, nil]];
     }
     
@@ -149,10 +151,11 @@ static unsigned long long AFFileSizeForPath(NSString *path) {
 - (void)setCompletionBlockWithSuccess:(void (^)(AFHTTPRequestOperation *operation, id responseObject))success
                               failure:(void (^)(AFHTTPRequestOperation *operation, NSError *error))failure
 {
-    self.completionBlock = ^ {
+    self.completionBlock = ^{
+        NSError *fileError = nil;
         if([self isCancelled]) {
             if (self.deletesFileUponFailure) {
-                [self deleteTempFileWithError:&_downloadError];
+                [self deleteTempFileWithError:&fileError];
             }
             return;
         }else {
@@ -160,14 +163,15 @@ static unsigned long long AFFileSizeForPath(NSString *path) {
                 NSString *destinationPath = [self destinationPath];
                 NSFileManager *fileManager = [[NSFileManager alloc] init];
                 if (_allowOverwrite && [fileManager fileExistsAtPath:destinationPath]) {
-                    [fileManager removeItemAtPath:destinationPath error:&_downloadError];
+                    [fileManager removeItemAtPath:destinationPath error:&fileError];
                 }
-                if (!_downloadError) {
-                    [fileManager moveItemAtPath:[self temporaryPath] toPath:destinationPath error:&_downloadError];
+                if (!fileError) {
+                    [fileManager moveItemAtPath:[self temporaryPath] toPath:destinationPath error:&fileError];
                 }
                 [fileManager release];
             }
         }
+        self.downloadError = fileError;
         
         if (self.error) {
             dispatch_async(self.failureCallbackQueue ? self.failureCallbackQueue : dispatch_get_main_queue(), ^{

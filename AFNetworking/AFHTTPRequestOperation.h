@@ -57,22 +57,6 @@ extern NSString * AFCreateIncompleteDownloadDirectoryPath(void);
  */
 @property (nonatomic, copy) NSString *responseFilePath;
 
-
-/** 
- Expected total length. This is different than expectedContentLength if the file is resumed.
- On regular requests, this is equal to self.response.expectedContentLength unless we resume a request.
- 
- Note: this can also be -1 if the file size is not sent (*)
- */
-@property (assign, readonly) long long totalContentLength;
-
-/** 
- Indicator for the file offset on partial/resumed downloads.
- This is greater than zero if the file download is resumed.
- */
-@property (assign, readonly) long long offsetContentLength;
-
-
 ///----------------------------------------------------------
 /// @name Managing And Checking For Acceptable HTTP Responses
 ///----------------------------------------------------------
