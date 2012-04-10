@@ -110,7 +110,10 @@ NSString * AFCreateIncompleteDownloadDirectoryPath(void) {
 
 #pragma mark -
 
+typedef void (^AFURLConnectionOperationProgressBlock)(NSInteger bytes, long long totalBytes, long long totalBytesExpected);
+
 @interface AFHTTPRequestOperation ()
+@property (readwrite, nonatomic, copy) AFURLConnectionOperationProgressBlock downloadProgress;
 @property (readwrite, nonatomic, retain) NSURLRequest *request;
 @property (readwrite, nonatomic, retain) NSHTTPURLResponse *response;
 @property (readwrite, nonatomic, retain) NSError *HTTPError;
@@ -127,6 +130,7 @@ NSString * AFCreateIncompleteDownloadDirectoryPath(void) {
 @synthesize offsetContentLength = _offsetContentLength;
 @dynamic request;
 @dynamic response;
+@dynamic downloadProgress;
 
 - (void)dealloc {
     [_HTTPError release];
@@ -289,6 +293,14 @@ NSString * AFCreateIncompleteDownloadDirectoryPath(void) {
     }
     
     return [[self acceptableContentTypes] intersectsSet:AFContentTypesFromHTTPHeader([request valueForHTTPHeaderField:@"Accept"])];
+}
+
+#pragma mark - AFHTTPClientOperation
+
+- (void)setDownloadProgressBlock:(void (^)(NSInteger bytesRead, long long totalBytesRead, long long totalBytesExpectedToRead))block {    
+    self.downloadProgress = ^(NSInteger bytesRead, long long totalBytesRead, long long totalBytesExpectedToRead) {
+        if (block) block(bytesRead, totalBytesRead + self.offsetContentLength, self.totalContentLength);
+    };
 }
 
 #pragma mark - NSURLConnectionDelegate
