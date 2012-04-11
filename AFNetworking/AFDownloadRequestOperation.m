@@ -198,10 +198,6 @@ static unsigned long long AFFileSizeForPath(NSString *path) {
     if (self.cacheResponse) {
         return self.cacheResponse(connection, cachedResponse);
     } else {
-        if ([self isCancelled]) {
-            return nil;
-        }
-        
         return nil; 
     }
 }
