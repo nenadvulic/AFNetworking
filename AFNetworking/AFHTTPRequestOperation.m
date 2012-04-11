@@ -254,7 +254,7 @@ typedef void (^AFURLConnectionOperationProgressBlock)(NSInteger bytes, long long
         _responseFilePath = [responseFilePath retain];
         
         if (responseFilePath) {
-            self.outputStream = [NSOutputStream outputStreamToFileAtPath:responseFilePath append:NO];
+            self.outputStream = [NSOutputStream outputStreamToFileAtPath:responseFilePath append:YES];
         }else {
             self.outputStream = [NSOutputStream outputStreamToMemory];
         }
