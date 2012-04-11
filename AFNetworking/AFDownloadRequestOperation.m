@@ -23,7 +23,10 @@
 #import "AFDownloadRequestOperation.h"
 #import "AFURLConnectionOperation.h"
 
+typedef NSCachedURLResponse * (^AFURLConnectionOperationCacheResponseBlock)(NSURLConnection *connection, NSCachedURLResponse *cachedResponse);
+
 @interface AFDownloadRequestOperation()
+@property (readwrite, nonatomic, copy) AFURLConnectionOperationCacheResponseBlock cacheResponse;
 @property (readwrite, nonatomic, retain) NSURLRequest *request;
 @property (readwrite, nonatomic, retain) NSError *downloadError;
 @property (readwrite, nonatomic, copy) NSString *destination;
@@ -51,7 +54,7 @@ static unsigned long long AFFileSizeForPath(NSString *path) {
 @synthesize destination = _destination;
 @synthesize allowOverwrite = _allowOverwrite;
 @synthesize deletesFileUponFailure = _deletesFileUponFailure;
-@dynamic request, totalContentLength, offsetContentLength;
+@dynamic request, totalContentLength, offsetContentLength, cacheResponse;
 
 - (id)initWithRequest:(NSURLRequest *)urlRequest {
     if ((self = [super initWithRequest:urlRequest])) {
@@ -185,10 +188,21 @@ static unsigned long long AFFileSizeForPath(NSString *path) {
     };    
 }
 
-#pragma mark -
+#pragma mark NSURLConnectionDelegate
 
-//- (void)setDecideDestinationWithSuggestedFilenameBlock:(void (^)(NSString *filename))block;
-//
-//- (void)setShouldDecodeSourceDataOfMimeTypeBlock:(BOOL (^)(NSString *encodingType))block;
-
+// changes the default implementation in AFURLConnectionOperation to NOT cache per default, unless a block is set.
+// we assume that downloads shouln't be saved into NSURLCache (which uses a disk-cache since iOS5)
+- (NSCachedURLResponse *)connection:(NSURLConnection *)connection 
+                  willCacheResponse:(NSCachedURLResponse *)cachedResponse 
+{
+    if (self.cacheResponse) {
+        return self.cacheResponse(connection, cachedResponse);
+    } else {
+        if ([self isCancelled]) {
+            return nil;
+        }
+        
+        return nil; 
+    }
+}
 @end
